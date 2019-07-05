@@ -15,7 +15,6 @@
       pagination-path=""
       multi-sort-key="ctrl"
       detail-row-component="my-detail-row"
-      :appendParams="moreParams"
       :multi-sort="true"
       :fields="fields"
       :per-page="20"
@@ -23,8 +22,9 @@
       @vuetable:pagination-data="onPaginationData"
       @vuetable:cell-clicked="onCellClicked"
     >
+      <!-- :appendParams="moreParams" -->
 
-      <template slot="actions" scope="props">
+      <template slot="actions" slot-scope="props">
         <div class="custom-actions">
           <button
             class="ui basic button"
@@ -68,7 +68,9 @@ import accounting from 'accounting';
 import moment from 'moment';
 import Vue from 'vue';
 import CustomActions from './CustomActions';
+import DetailRow from './DetailRow';
 
+Vue.component('my-detail-row', DetailRow);
 Vue.component('custom-actions', CustomActions);
 
 export default {
@@ -186,6 +188,13 @@ export default {
     },
     onChangePage(page) {
       this.$refs.vuetable.changePage(page);
+    },
+    onAction(action, data, index) {
+      console.log(`slot) action: ${action}, ${data.name}, ${index}`);
+    },
+    onCellClicked(data, field) {
+      console.log(`cellClicked: ${field.name}`);
+      this.$refs.vuetable.toggleDetailRow(data.id);
     },
   },
 };
