@@ -2,27 +2,29 @@
 
 <template>
   <div class="ui container">
-    <div class="vuetable-pagination ui basic segment grid">
+    <filter-bar></filter-bar>
+
+    <!-- <div class="vuetable-pagination ui basic segment grid">
       <vuetable-pagination-info ref="paginationInfoTop"></vuetable-pagination-info>
 
       <vuetable-pagination ref="paginationTop"
         @vuetable-pagination:change-page="onChangePage"
       ></vuetable-pagination>
-    </div>
+    </div> -->
 
     <vuetable ref="vuetable"
-      api-url="https://vuetable.ratiw.net/api/users"
+      :api-url="apiUrl"
+      :fields="fields"
+      :per-page="10"
+      :multi-sort="true"
+      :sort-order="sortOrder"
+      :appendParams="appendParams"
+      detail-row-component="detailRowComponent"
       pagination-path=""
       multi-sort-key="ctrl"
-      detail-row-component="my-detail-row"
-      :multi-sort="true"
-      :fields="fields"
-      :per-page="20"
-      :sort-order="sortOrder"
       @vuetable:pagination-data="onPaginationData"
       @vuetable:cell-clicked="onCellClicked"
     >
-      <!-- :appendParams="moreParams" -->
 
       <template slot="actions" slot-scope="props">
         <div class="custom-actions">
@@ -67,100 +69,34 @@ import VuetablePaginationInfo from 'vuetable-2/src/components/VuetablePagination
 import accounting from 'accounting';
 import moment from 'moment';
 import Vue from 'vue';
+import VueEvents from 'vue-events';
 import CustomActions from './CustomActions';
-import DetailRow from './DetailRow';
+import FilterBar from './FilterBar';
 
-Vue.component('my-detail-row', DetailRow);
+Vue.use(VueEvents);
+Vue.component('filter-bar', FilterBar);
 Vue.component('custom-actions', CustomActions);
 
 export default {
+  name: 'my-vuetable',
   components: {
     Vuetable,
     VuetablePagination,
     VuetablePaginationInfo,
   },
+  props: {
+    apiUrl: { type: String, required: true },
+    fields: { type: Array, required: true },
+    sortOrder: { type: Array, default() { return []; } },
+    appendParams: { type: Object, default() { return {}; } },
+    detailRowComponent: { type: String },
+  },
   data() {
-    return {
-      // css: {
-      //   ascendingIcon: 'glyphicon glyphicon-chevron-up',
-      //   descendingIcon: 'glyphicon glyphicon-chevron-down',
-      // },
-      sortOrder: [
-        {
-          field: 'email',
-          sortField: 'email',
-          direction: 'asc',
-        },
-      ],
-      fields: [
-        {
-          name: '__sequence',
-          title: '#',
-          titleClass: 'center aligned',
-          dataClass: 'right aligned',
-        },
-        {
-          name: '__handle',
-          dataClass: 'center aligned',
-        },
-        {
-          name: '__checkbox',
-          titleClass: 'center aligned',
-          dataClass: 'center aligned',
-        },
-        {
-          name: 'name',
-          sortField: 'name',
-        },
-        {
-          name: 'email',
-          sortField: 'email',
-        },
-        {
-          name: 'age',
-          sortField: 'birthdate',
-          dataClass: 'center aligned',
-        },
-        {
-          name: 'birthdate',
-          sortField: 'birthdate',
-          titleClass: 'center aligned',
-          dataClass: 'center aligned',
-          callback: 'formatDate|DD-MM-YYYY',
-        },
-        {
-          name: 'nickname',
-          sortField: 'nickname',
-          callback: 'allcap',
-        },
-        {
-          name: 'gender',
-          sortField: 'gender',
-          titleClass: 'center aligned',
-          dataClass: 'center aligned',
-          callback: 'genderLabel',
-        },
-        {
-          name: 'salary',
-          sortField: 'salary',
-          titleClass: 'center aligned',
-          dataClass: 'right aligned',
-          callback: 'formatNumber',
-        },
-        {
-          name: '__component:custom-actions',
-          title: 'Actions',
-          titleClass: 'center aligned',
-          dataClass: 'center aligned',
-        },
-        {
-          name: '__slot:actions',
-          title: 'Actions',
-          titleClass: 'center aligned',
-          dataClass: 'center aligned',
-        },
-      ],
-    };
+    return {};
+  },
+  mounted() {
+    this.$events.$on('filter-set', eventData => this.onFilterSet(eventData));
+    this.$events.$on('filter-reset', () => this.onFilterReset());
   },
   methods: {
     allcap(value) {
@@ -180,8 +116,8 @@ export default {
         : moment(value, 'YYYY-MM-DD').format(fmt);
     },
     onPaginationData(paginationData) {
-      this.$refs.paginationTop.setPaginationData(paginationData);
-      this.$refs.paginationInfoTop.setPaginationData(paginationData);
+      // this.$refs.paginationTop.setPaginationData(paginationData);
+      // this.$refs.paginationInfoTop.setPaginationData(paginationData);
 
       this.$refs.pagination.setPaginationData(paginationData);
       this.$refs.paginationInfo.setPaginationData(paginationData);
@@ -195,6 +131,14 @@ export default {
     onCellClicked(data, field) {
       console.log(`cellClicked: ${field.name}`);
       this.$refs.vuetable.toggleDetailRow(data.id);
+    },
+    onFilterSet(filterText) {
+      this.appendParams.filter = filterText;
+      Vue.nextTick(() => this.$refs.vuetable.refresh());
+    },
+    onFilterReset() {
+      delete this.appendParams.filter;
+      Vue.nextTick(() => this.$refs.vuetable.refresh());
     },
   },
 };
